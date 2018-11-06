@@ -38,8 +38,6 @@ function actionOnMessage(message)
 {
     var msgObject = JSON.parse(message);
 
-    
-
     switch(msgObject.action){
         case "update":
             console.log(`Updating my configuration: ${msgObject.updatekey} :: ${msgObject.updatevalue}`);
