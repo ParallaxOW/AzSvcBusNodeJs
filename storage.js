@@ -14,5 +14,14 @@ module.exports = {
                 throw error;
             }
         });
+    },
+    saveBlob: function(blobname, pathname){
+        blobService.createBlockBlobFromLocalFile(config.AZURE_STORAGE_CONTAINER_NAME, blobname, pathname, function(error, result, response) {
+            if (!error) {
+                console.log(`${imageName} Uploaded!`);
+            }else{
+                console.log(`File not uploaded :: ${error}`);
+            }
+        });
     }
 };

@@ -1,18 +1,31 @@
-var azure = require("azure");
-var config = require("./local.settings.json");
-var toStorage = require("./storage");
+const azure = require("azure");
+const config = require("./local.settings.json");
+const toStorage = require("./storage");
 const dateFormat = require("dateformat");
+const pins = require("./led");
+const cam = require("./camera");
 
+console.log("setup led...");
+pins.ledSetup();
 
 var serviceBusService =azure.createServiceBusService(config.AZURE_SERVICEBUS_CONNECTION_STRING);
 
 serviceBusService.createQueueIfNotExists(config.AZURE_SERVICE_BUS_QUEUE_NAME, function(error){
     if(!error){
-        console.log("queue exists!!");
+        console.log("queue created!!");
+    }else{
+        console.log("queue exists!");
     }
 });
 
-setInterval(getMessages, 100);
+setInterval(getMessages, 50);
+
+console.log("listening for messages...");
+
+process.on('exit', function (){
+    pins.cleanupGPIO();
+    process.exit(0);
+});
 
 function getMessages(){
     serviceBusService.receiveQueueMessage(config.AZURE_SERVICE_BUS_QUEUE_NAME, { isPeekLock: true }, function(error, lockedMessage){
@@ -45,7 +58,15 @@ function actionOnMessage(message)
         case "storage":
             console.log(`saving message to storage!`);
             var blobname = getFileName(msgObject.dataType);
-            toStorage.saveMessage(blobname, msgObject.saveData);
+            toStorage.saveMessage(blobname, msgObject.data);
+            break;
+        case "capturestill":
+            console.log("snapping image!");
+            cam.snap();
+            break;
+        case "toggleLED":
+            console.log("toggling LED!");
+            pins.toggleLED();
             break;
         default: 
             console.log("taking other action!!!");
@@ -78,3 +99,4 @@ function getFileName(type){
 
     return `${type}_${getFormattedDate()}.${ext}`;
 }
+
